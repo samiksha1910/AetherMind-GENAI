@@ -1,6 +1,9 @@
 
 import os
+import logging
 from pymongo import MongoClient
+
+logger = logging.getLogger(__name__)
 
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "aethermind")
@@ -13,24 +16,35 @@ def connect_to_mongodb():
     global client, database
 
     if not MONGODB_URI:
-        raise RuntimeError("MONGODB_URI is missing from backend/.env")
+        raise RuntimeError("MONGODB_URI is missing from environment variables.")
 
-    if client is None:
-        client = MongoClient(
-            MONGODB_URI,
-            serverSelectionTimeoutMS=10000
-        )
-        client.admin.command("ping")
-        database = client[MONGODB_DATABASE]
+    # Reconnect if either connection object is missing.
+    if client is None or database is None:
+        try:
+            new_client = MongoClient(
+                MONGODB_URI,
+                serverSelectionTimeoutMS=10000
+            )
+
+            new_client.admin.command("ping")
+            new_database = new_client[MONGODB_DATABASE]
+
+            # Assign only after the connection succeeds.
+            client = new_client
+            database = new_database
+
+            logger.info("MongoDB connected successfully.")
+
+        except Exception:
+            logger.exception("MongoDB connection failed.")
+            raise
 
     return database
 
 
 def get_tasks_collection():
-    db = connect_to_mongodb()
-    return db["tasks"]
+    return connect_to_mongodb()["tasks"]
 
 
 def get_goals_collection():
-    db = connect_to_mongodb()
-    return db["goals"]
+    return connect_to_mongodb()["goals"]
