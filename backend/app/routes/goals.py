@@ -1,4 +1,6 @@
+import logging
 
+logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
@@ -32,6 +34,7 @@ def create_goal(goal: GoalCreate):
             "goal": serialize_goal(saved_goal)
         }
     except Exception as error:
+        logger.exception("GOAL CREATION FAILED")
         raise HTTPException(
             status_code=500,
             detail=f"Could not create goal: {type(error).__name__}"
