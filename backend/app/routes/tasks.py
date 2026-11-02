@@ -1,4 +1,6 @@
+import logging
 
+logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
@@ -42,9 +44,10 @@ def create_task(task: ExtractedTask):
             "task": serialize_task(saved_task)
         }
     except Exception as error:
+        logger.exception("TASK CREATION FAILED")
         raise HTTPException(
             status_code=500,
-            detail=f"Could not save task: {type(error).__name__}"
+            detail=f"Could not save task: {type(error).__name__}: {str(error)}"
         )
 
 
